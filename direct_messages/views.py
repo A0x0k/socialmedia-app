@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
+from django_ratelimit.decorators import ratelimit
 from .models import Conversation, Message
 from .forms import MessageForm
 from django.contrib.auth.models import User
@@ -10,13 +11,30 @@ from notifications.utils import send_notification
 
 @login_required
 def inbox(request):
-    conversations = request.user.conversations.prefetch_related('participants').all()
-    return render(request, 'messages/inbox.html', {'conversations': conversations})
+    conversations = request.user.conversations.prefetch_related(
+        'participants', 'messages'
+    ).only(
+        'id', 'updated_at', 'created_at'
+    ).all()
+    conversation_data = []
+    for conv in conversations:
+        other_user = conv.participants.exclude(id=request.user.id).first()
+        if other_user:
+            last_message = conv.messages.last()
+            conversation_data.append({
+                'conversation': conv,
+                'other_user': other_user,
+                'last_message': last_message,
+            })
+    return render(request, 'messages/inbox.html', {
+        'conversations': conversations,
+        'conversation_data': conversation_data,
+    })
 
 @login_required
 def conversation_detail(request, username):
     other_user = get_object_or_404(User, username=username)
-    conversation, created = Conversation.objects.get_or_create_for_users(request.user, other_user)
+    conversation, created = Conversation.get_or_create_for_users(request.user, other_user)
 
     if request.method == 'POST':
         form = MessageForm(request.POST)
@@ -32,7 +50,7 @@ def conversation_detail(request, username):
                 'message',
                 related_user=request.user
             )
-            return redirect('messages:conversation_detail', username=username)
+            return redirect('direct_messages:conversation_detail', username=username)
     else:
         form = MessageForm()
 
@@ -45,13 +63,14 @@ def conversation_detail(request, username):
     })
 
 @login_required
+@ratelimit(key='user', rate='10/m', method='POST', block=True)
 def send_message(request):
     if request.method == 'POST':
         recipient_username = request.POST.get('recipient')
         content = request.POST.get('content')
 
         recipient = get_object_or_404(User, username=recipient_username)
-        conversation, created = Conversation.objects.get_or_create_for_users(request.user, recipient)
+        conversation, created = Conversation.get_or_create_for_users(request.user, recipient)
 
         message = Message.objects.create(
             conversation=conversation,

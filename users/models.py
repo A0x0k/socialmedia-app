@@ -33,10 +33,10 @@ class Profile(models.Model):
     location = models.CharField(max_length=100, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     followers = models.ManyToManyField('self', symmetrical=False, related_name='following', blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
-    email_verified = models.BooleanField(default=False)
-    is_private = models.BooleanField(default=False, help_text='Private account requires approval for followers')
+    email_verified = models.BooleanField(default=False, db_index=True)
+    is_private = models.BooleanField(default=False, db_index=True, help_text='Private account requires approval for followers')
     blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by', blank=True)
     
     def __str__(self):
@@ -46,22 +46,22 @@ class Profile(models.Model):
     def clean(self):
         """Custom validation for the Profile model"""
         super().clean()
-        if self.bio and len(self.bio) > 500:
-            raise ValidationError("Bio cannot exceed 500 characters.")
-        
         if self.bio:
+            if len(self.bio) > 500:
+                raise ValidationError("Bio cannot exceed 500 characters.")
             from posts.utils import contains_profanity
             if contains_profanity(self.bio):
                 raise ValidationError("Bio contains inappropriate language.")
-            raise ValidationError("Bio cannot exceed 500 characters.")
         
         if self.location and len(self.location) > 100:
             raise ValidationError("Location cannot exceed 100 characters.")
         
-        if self.image and self.image.size:
-            max_size = 5 * 1024 * 1024  # 5MB
-            if self.image.size > max_size:
-                raise ValidationError(f'Profile image too large. Size should not exceed 5MB.')
+        if self.image and not self._state.adding:
+            try:
+                if self.image.size > 5 * 1024 * 1024:
+                    raise ValidationError('Profile image too large. Size should not exceed 5MB.')
+            except (FileNotFoundError, ValueError, OSError):
+                pass
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -118,9 +118,9 @@ class Profile(models.Model):
 
 
 class FollowRequest(models.Model):
-    from_user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sent_follow_requests')
-    to_user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='received_follow_requests')
-    created_at = models.DateTimeField(auto_now_add=True)
+    from_user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='sent_follow_requests', db_index=True)
+    to_user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='received_follow_requests', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         unique_together = ('from_user', 'to_user')

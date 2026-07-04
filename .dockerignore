@@ -8,3 +8,10 @@ db.sqlite3
 logs
 cache
 .DS_Store
+venv
+.venv
+media
+staticfiles_build
+*.md
+*.txt
+!requirements.txt

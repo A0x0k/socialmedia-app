@@ -16,6 +16,7 @@ def report_post(request, post_id):
             report = form.save(commit=False)
             report.reporter = request.user
             report.reported_post = post
+            report.full_clean()
             report.save()
             messages.success(request, 'تم إرسال التقرير بنجاح.')
             return redirect('posts:post_detail', post_id=post.id)
@@ -32,6 +33,7 @@ def report_user(request, username):
             report = form.save(commit=False)
             report.reporter = request.user
             report.reported_user = user
+            report.full_clean()
             report.save()
             messages.success(request, 'تم إرسال التقرير بنجاح.')
             return redirect('users:profile', username=username)

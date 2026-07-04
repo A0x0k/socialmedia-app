@@ -235,13 +235,16 @@ def unblock_user(request, username):
 
 @login_required
 def blocked_users_list(request):
-    blocked = request.user.profile.blocked_users.all()
+    blocked = request.user.profile.blocked_users.select_related('user').all()
     return render(request, 'users/blocked_users.html', {'blocked': blocked})
 
 @login_required
 def followers_list(request, username):
-    user = get_object_or_404(User, username=username)
-    followers = user.profile.followers.all()
+    user = get_object_or_404(
+        User.objects.select_related('profile'),
+        username=username
+    )
+    followers = user.profile.followers.select_related('user').all()
     return render(request, 'users/followers_list.html', {
         'user': user,
         'followers': followers
@@ -270,8 +273,11 @@ def reject_follow_request(request, request_id):
 
 @login_required
 def following_list(request, username):
-    user = get_object_or_404(User, username=username)
-    following = user.profile.following.all()
+    user = get_object_or_404(
+        User.objects.select_related('profile'),
+        username=username
+    )
+    following = user.profile.following.select_related('user').all()
     return render(request, 'users/following_list.html', {
         'user': user,
         'following': following

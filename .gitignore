@@ -78,3 +78,7 @@ venv.bak/
 .DS_Store
 .Trashes
 Thumbs.db
+
+# Static build artifacts
+staticfiles_build/
+logs/

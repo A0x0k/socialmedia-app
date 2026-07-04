@@ -9,7 +9,7 @@ class Hashtag(models.Model):
     """
     Hashtag model
     """
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True, db_index=True)
 
     def __str__(self):
         return self.name
@@ -18,13 +18,13 @@ class Post(models.Model):
     """
     Post model for the application
     """
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts', db_index=True)
     content = models.TextField(validators=[MinLengthValidator(1, message="Post content cannot be empty.")])
     image = models.ImageField(upload_to='posts/', blank=True, null=True, 
                              validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])])
     video = models.FileField(upload_to='posts/', blank=True, null=True,
                             validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'avi', 'mkv', 'webm'])])
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     hashtags = models.ManyToManyField(Hashtag, blank=True, related_name='posts')
 
@@ -94,10 +94,10 @@ class Reaction(models.Model):
         (SAD, '😢 حزن'),
     ]
 
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='reactions')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reactions')
-    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES, default=LIKE)
-    created_at = models.DateTimeField(default=timezone.now)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='reactions', db_index=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reactions', db_index=True)
+    reaction_type = models.CharField(max_length=10, choices=REACTION_CHOICES, default=LIKE, db_index=True)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
         unique_together = ('post', 'user')  # One reaction per user per post
@@ -109,7 +109,7 @@ class Story(models.Model):
     """
     Temporary stories model
     """
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories', db_index=True)
     content = models.TextField(
         blank=True, 
         max_length=2000,
@@ -127,8 +127,8 @@ class Story(models.Model):
         null=True,
         validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'avi', 'mkv'])]
     )
-    created_at = models.DateTimeField(default=timezone.now)
-    expires_at = models.DateTimeField()  # 24 hours from creation
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+    expires_at = models.DateTimeField(db_index=True)  # 24 hours from creation
     views = models.ManyToManyField(User, related_name='viewed_stories', blank=True)
 
     def __str__(self):
@@ -176,13 +176,13 @@ class Comment(models.Model):
     """
     Comment model for posts
     """
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments')
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='comments', db_index=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments', db_index=True)
     content = models.TextField(
         max_length=1000,
         validators=[MinLengthValidator(1, message="Comment content cannot be empty.")]
     )
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
 
@@ -217,9 +217,9 @@ class Comment(models.Model):
         ordering = ['created_at']
 
 class Bookmark(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookmarks', db_index=True)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='bookmarks')
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
         unique_together = ('user', 'post')

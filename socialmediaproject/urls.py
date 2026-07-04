@@ -19,11 +19,38 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.http import JsonResponse
+from django.db import connection
+from django.core.cache import cache
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+def health_check(request):
+    """Health check endpoint for container orchestration."""
+    health = {'status': 'ok', 'checks': {}}
+
+    # Database check
+    try:
+        connection.ensure_connection()
+        health['checks']['database'] = 'ok'
+    except Exception as e:
+        health['checks']['database'] = str(e)
+        health['status'] = 'degraded'
+
+    # Cache check
+    try:
+        cache.ping() if hasattr(cache, 'ping') else cache.get('health_check')
+        health['checks']['cache'] = 'ok'
+    except Exception as e:
+        health['checks']['cache'] = str(e)
+        health['status'] = 'degraded'
+
+    status_code = 200 if health['status'] == 'ok' else 503
+    return JsonResponse(health, status=status_code)
 
 urlpatterns = [
      path('admin/', admin.site.urls),
      path('', include('posts.urls')),
+     path('health/', health_check, name='health_check'),
      path('users/', include('users.urls')),
      path('notifications/', include('notifications.urls')),
      path('messages/', include('direct_messages.urls')),

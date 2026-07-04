@@ -4,7 +4,9 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from posts.models import Post
 from django.core.paginator import Paginator
+from django_ratelimit.decorators import ratelimit
 
+@ratelimit(key='user', rate='30/m', method='GET', block=True)
 @login_required
 def search(request):
     """البحث في المنشورات والمستخدمين"""
@@ -25,7 +27,7 @@ def search(request):
                 Q(username__icontains=query) |
                 Q(first_name__icontains=query) |
                 Q(last_name__icontains=query)
-            )
+            ).select_related('profile')
         else:
             users = User.objects.none()
     else:
@@ -51,6 +53,7 @@ def search(request):
     
     return render(request, 'searchapp/search_results.html', context)
 
+@ratelimit(key='user', rate='30/m', method='GET', block=True)
 @login_required
 def advanced_search(request):
     """البحث المتقدم"""

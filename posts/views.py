@@ -26,57 +26,15 @@ def post_list(request):
     blocked = request.user.profile.blocked_users.values_list('user_id', flat=True)
     blocked_by = request.user.profile.blocked_by.values_list('user_id', flat=True)
     exclude_ids = set(blocked) | set(blocked_by)
-    posts = Post.objects.select_related('author').exclude(author_id__in=exclude_ids).order_by('-created_at')
+    posts = Post.objects.select_related('author').only(
+        'id', 'content', 'created_at', 'author__username', 'author__id'
+    ).exclude(author_id__in=exclude_ids).order_by('-created_at')
     paginator = Paginator(posts, 10)
     
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
     return render(request, 'posts/post_list.html', {'page_obj': page_obj})
-
-@login_required
-def post_detail(request, post_id):
-    """عرض تفاصيل منشور معين"""
-    post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
-    comments = post.comments.select_related('author').all().order_by('-created_at')
-    
-    if request.method == 'POST':
-        comment_form = CommentForm(request.POST)
-        if comment_form.is_valid():
-            try:
-                comment = comment_form.save(commit=False)
-                comment.post = post
-                comment.author = request.user
-                comment.save()
-                messages.success(request, _('تم إضافة تعليقك بنجاح!'))
-                # Send notification
-                if request.user != post.author:
-                    send_notification(
-                        post.author,
-                        f'{request.user.username} علق على منشورك',
-                        'comment',
-                        related_user=request.user,
-                        related_post=post
-                    )
-                return redirect('posts:post_detail', post_id=post.id)
-            except ValidationError as e:
-                messages.error(request, _('خطأ في التحقق من التعليق: ') + str(e))
-            except Exception as e:
-                logger.error(f"Error saving comment: {str(e)}")
-                messages.error(request, _('حدث خطأ أثناء حفظ التعليق.'))
-        else:
-            # Handle form errors
-            for field, errors in comment_form.errors.items():
-                for error in errors:
-                    messages.error(request, f"{field}: {error}")
-    else:
-        comment_form = CommentForm()
-    
-    return render(request, 'posts/post_detail.html', {
-        'post': post,
-        'comments': comments,
-        'comment_form': comment_form
-    })
 
 @login_required
 @post_creation_ratelimit
@@ -134,6 +92,50 @@ def post_edit(request, post_id):
         form = PostForm(instance=post)
     return render(request, 'posts/post_edit.html', {'form': form, 'post': post})
 
+
+@login_required
+def post_detail(request, post_id):
+    """عرض تفاصيل منشور معين"""
+    post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
+    comments = post.comments.select_related('author').all().order_by('-created_at')
+
+    if request.method == 'POST':
+        comment_form = CommentForm(request.POST)
+        if comment_form.is_valid():
+            try:
+                comment = comment_form.save(commit=False)
+                comment.post = post
+                comment.author = request.user
+                comment.save()
+                messages.success(request, _('تم إضافة تعليقك بنجاح!'))
+                # Send notification
+                if request.user != post.author:
+                    send_notification(
+                        post.author,
+                        f'{request.user.username} علق على منشورك',
+                        'comment',
+                        related_user=request.user,
+                        related_post=post
+                    )
+                return redirect('posts:post_detail', post_id=post.id)
+            except ValidationError as e:
+                messages.error(request, _('خطأ في التحقق من التعليق: ') + str(e))
+            except Exception as e:
+                logger.error(f"Error saving comment: {str(e)}")
+                messages.error(request, _('حدث خطأ أثناء حفظ التعليق.'))
+        else:
+            for field, errors in comment_form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        comment_form = CommentForm()
+
+    return render(request, 'posts/post_detail.html', {
+        'post': post,
+        'comments': comments,
+        'comment_form': comment_form
+    })
+
 @login_required
 @ratelimit(key='user', rate='5/m', method='POST', block=True)
 def post_delete(request, post_id):
@@ -145,6 +147,7 @@ def post_delete(request, post_id):
     return render(request, 'posts/post_confirm_delete.html', {'post': post})
 
 @login_required
+@ratelimit(key='user', rate='10/m', method='POST', block=True)
 def react_to_post(request, post_id):
     try:
         post = get_object_or_404(Post.objects.select_related('author'), id=post_id)
@@ -217,9 +220,14 @@ def hashtag_posts(request, hashtag_name):
 @login_required
 def trending_hashtags(request):
     from django.db.models import Count
-    hashtags = Hashtag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:10]
+    from django.core.cache import cache
+    hashtags = cache.get('trending_hashtags')
+    if hashtags is None:
+        hashtags = Hashtag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:10]
+        cache.set('trending_hashtags', hashtags, 300)  # Cache for 5 minutes
     return render(request, 'posts/trending_hashtags.html', {'hashtags': hashtags})
 
+@ratelimit(key='user', rate='30/m', method='GET', block=True)
 @login_required
 def search(request):
     """البحث المتقدم في المنشورات والمستخدمين"""
@@ -280,6 +288,7 @@ def stories_list(request):
     return render(request, 'posts/stories_list.html', {'stories': stories})
 
 @login_required
+@ratelimit(key='user', rate='5/m', method='POST', block=True)
 def create_story(request):
     """إنشاء قصة جديدة"""
     if request.method == 'POST':
@@ -339,12 +348,21 @@ def bookmark_toggle(request, post_id):
 
 @login_required
 def saved_posts(request):
-    bookmarks = Bookmark.objects.filter(user=request.user).select_related('post__author').order_by('-created_at')
+    bookmarks = Bookmark.objects.filter(user=request.user).select_related(
+        'post__author'
+    ).only(
+        'post__id', 'post__content', 'post__created_at', 'post__author__username',
+        'created_at'
+    ).order_by('-created_at')
     posts = [b.post for b in bookmarks]
     return render(request, 'posts/saved_posts.html', {'posts': posts})
 
 @api_view(['GET'])
 def api_post_list(request):
+    from rest_framework.pagination import PageNumberPagination
+    paginator = PageNumberPagination()
+    paginator.page_size = 20
     posts = Post.objects.select_related('author').all().order_by('-created_at')
-    serializer = PostSerializer(posts, many=True)
-    return Response(serializer.data)
+    result_page = paginator.paginate_queryset(posts, request)
+    serializer = PostSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)

@@ -30,12 +30,11 @@ class Report(models.Model):
     resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='resolved_reports')
 
     def clean(self):
+        from django.core.exceptions import ValidationError
         if not self.reported_user and not self.reported_post and not self.reported_comment:
-            from django.core.exceptions import ValidationError
             raise ValidationError('A report must have at least one target (user, post, or comment).')
 
     def save(self, *args, **kwargs):
-        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):

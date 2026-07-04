@@ -289,12 +289,23 @@
       notificationSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
         if (data.type === "notification") {
-          showNotification(data.notification.message);
+          showNotification(data.notification);
         }
       };
 
-      function showNotification(message) {
-        alert("إشعار جديد: " + message);
+      function showNotification(notification) {
+        const safeMessage = document.createElement("div");
+        safeMessage.textContent = notification.message;
+        const modal = document.createElement("div");
+        modal.className = "toast-notification";
+        modal.innerHTML =
+          '<div class="toast-header"><strong>إشعار جديد</strong></div><div class="toast-body">' +
+          safeMessage.textContent +
+          "</div>";
+        document.body.appendChild(modal);
+        setTimeout(function () {
+          modal.remove();
+        }, 5000);
       }
     </script>
     {% endif %}
