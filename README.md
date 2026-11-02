@@ -194,18 +194,18 @@
 
 ```mermaid
 graph TD
-    Client[Browser / Client (Bootstrap 5 RTL + WS)] -->|HTTP / REST API| Daphne[Daphne ASGI Server]
+    Client["Browser / Client (Bootstrap 5 RTL + WS)"] -->|HTTP / REST API| Daphne["Daphne ASGI Server"]
     Client -->|WebSocket (WSS)| Daphne
-    Daphne --> Django[Django 5.2 Application Core]
+    Daphne --> Django["Django 5.2 Application Core"]
     subgraph Django Apps
-        Django --> Posts[Posts & Stories]
-        Django --> Users[Users & Social Graph]
-        Django --> Chat[Direct Messages]
-        Django --> Notif[Notifications]
-        Django --> Search[Search & Reports]
+        Django --> Posts["Posts & Stories"]
+        Django --> Users["Users & Social Graph"]
+        Django --> Chat["Direct Messages"]
+        Django --> Notif["Notifications"]
+        Django --> Search["Search & Reports"]
     end
-    Django --> DB[(PostgreSQL / SQLite)]
-    Django --> Redis[(Redis 7 Cache & Channel Layer)]
+    Django --> DB[("PostgreSQL / SQLite")]
+    Django --> Redis[("Redis 7 Cache & Channel Layer")]
 ```
 
 ### Real-Time WebSocket Messaging Sequence
