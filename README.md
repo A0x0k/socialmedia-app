@@ -194,32 +194,33 @@
 
 ```mermaid
 graph TD
-    Client["Browser / Client"] -->|HTTP / REST API| Daphne["Daphne ASGI Server"]
+    Client["Browser Client"] -->|HTTP REST API| Daphne["Daphne ASGI Server"]
     Client -->|WebSocket WSS| Daphne
     Daphne --> Django["Django 5.2 Application Core"]
-    Django --> Posts["Posts & Stories App"]
-    Django --> Users["Users & Social Graph App"]
+    Django --> Posts["Posts and Stories App"]
+    Django --> Users["Users and Social Graph App"]
     Django --> Chat["Direct Messages App"]
     Django --> Notif["Notifications App"]
-    Django --> Search["Search & Reports App"]
-    Django --> DB[("PostgreSQL / SQLite Database")]
-    Django --> Redis[("Redis 7 Cache & Channel Layer")]
+    Django --> Search["Search and Reports App"]
+    Django --> DB[("PostgreSQL Database")]
+    Django --> Redis[("Redis 7 Cache Layer")]
 ```
 
 ### Real-Time WebSocket Messaging Sequence
 
 ```mermaid
 sequenceDiagram
-    participant UserA as User A (Client)
+    participant UserA as User A
     participant WS as WebSocket Consumer
-    participant CL as Channel Layer (Redis)
-    participant UserB as User B (Client)
+    participant CL as Redis Channel Layer
+    participant UserB as User B
+    participant DB as PostgreSQL Database
 
-    UserA->>WS: Send Message (WS /ws/chat/<id>/)
-    WS->>CL: Publish to room group
-    CL->>WS: Broadcast message event
-    WS->>UserB: Deliver real-time message
-    WS->>DB: Persist message in PostgreSQL
+    UserA->>WS: Send Chat Message
+    WS->>CL: Publish to Room Group
+    CL->>WS: Broadcast Message Event
+    WS->>UserB: Deliver Real-Time Message
+    WS->>DB: Persist Message Record
 ```
 
 ---
