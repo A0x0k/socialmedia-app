@@ -26,9 +26,11 @@
   <a href="#features">Features</a> •
   <a href="#tech-stack">Tech Stack</a> •
   <a href="#architecture">Architecture</a> •
+  <a href="#project-structure">Project Structure</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#api">API</a> •
   <a href="#testing">Testing</a> •
+  <a href="#troubleshooting">Troubleshooting</a> •
   <a href="#production">Production</a>
 </p>
 
@@ -113,7 +115,7 @@
 
 | Feature                                     | Status |
 | ------------------------------------------- | ------ |
-| Dark mode (OS preference detection)         | ✅     |
+| Dark mode (OS preference detection)         |         |
 | Bootstrap 5 RTL responsive design           | ✅     |
 | Open Graph meta tags for social sharing     | ✅     |
 | AJAX reactions with WebSocket notifications | ✅     |
@@ -188,16 +190,28 @@
                     └─────────────────────────┘
 ```
 
-### App Responsibilities
+---
 
-| App                 | Responsibility                                                |
-| ------------------- | ------------------------------------------------------------- |
-| **posts**           | CRUD posts, stories, comments, reactions, hashtags, bookmarks |
-| **users**           | Auth, profiles, follows, blocks, follow requests, settings    |
-| **notifications**   | Real-time + database notifications                            |
-| **direct_messages** | WebSocket-powered private chat                                |
-| **reports**         | Content moderation and abuse reporting                        |
-| **searchapp**       | Cross-model search                                            |
+## Project Structure
+
+```text
+socialmedia-app/
+├── direct_messages/         # WebSocket chat & real-time messaging
+├── docs/                    # Architecture & deployment guides
+├── middleware/              # Rate limiting & exception handlers
+├── notifications/           # Real-time and persistent user notifications
+├── posts/                   # Posts, stories, comments, reactions, hashtags
+├── reports/                 # Content moderation and abuse reporting
+├── searchapp/               # Cross-model search engine (posts & users)
+├── socialmediaproject/      # Django settings, ASGI/WSGI routing, URLs
+├── static/                  # Stylesheets, custom CSS, JS assets
+├── templates/               # Global and app-specific HTML templates
+├── utils/                   # File validation and security utilities
+├── docker-compose.yml       # Production/dev container orchestration
+├── Dockerfile               # Multi-stage secure container build
+├── manage.py                # Django CLI management utility
+└── requirements.txt         # Python dependencies
+```
 
 ---
 
@@ -249,7 +263,7 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-> **Note**: Without Redis, the app falls back to DatabaseCache and InMemoryChannelLayer automatically.
+> **Note**: Without Redis, the app automatically falls back to DatabaseCache and InMemoryChannelLayer.
 
 ---
 
@@ -294,11 +308,6 @@ DEFAULT_FROM_EMAIL=your-email@gmail.com
 
 Interactive Swagger documentation is available at `/api/docs/` when the server is running.
 
-```bash
-# OpenAPI schema
-GET /api/schema/
-```
-
 ### Key REST Endpoints
 
 | Method | Endpoint                    | Description          |
@@ -316,10 +325,12 @@ GET /api/schema/
 | `ws://host/ws/chat/<conversation_id>/` | Real-time chat          |
 | `ws://host/ws/notifications/`          | Real-time notifications |
 
-### Authentication
+### Example cURL Request
 
-The REST API uses **SessionAuthentication** with **BasicAuthentication** as fallback.  
-All API endpoints require authentication by default.
+```bash
+# Fetch health status
+curl -X GET http://localhost:8000/health/
+```
 
 ---
 
@@ -359,6 +370,22 @@ python manage.py check --deploy
 
 ---
 
+## Troubleshooting
+
+### Common Issues & Solutions
+
+1. **Redis Connection Warnings**:
+   - *Symptom*: Logs show inability to connect to Redis.
+   - *Solution*: The application is designed to gracefully fallback to Django's `DatabaseCache` and `InMemoryChannelLayer`. For multi-worker production, ensure Redis service is running and `REDIS_URL` is correctly configured in `.env`.
+2. **WebSocket Connection Failures**:
+   - *Symptom*: Chat or notifications fail to connect via WebSocket.
+   - *Solution*: Ensure you are running the ASGI server (Daphne or Uvicorn) rather than the standard WSGI development server (`python manage.py runserver`).
+3. **Database Migration Issues**:
+   - *Symptom*: Missing tables or column errors.
+   - *Solution*: Run `python manage.py migrate` to apply all pending migrations across all apps.
+
+---
+
 ## Docker
 
 ```bash
@@ -381,15 +408,6 @@ docker compose exec web python manage.py cleanup_stories
 docker compose ps
 ```
 
-### Docker Features
-
-- **Multi-stage build**: builder image with dev dependencies is discarded at runtime
-- **Non-root user**: container runs as `app` (UID 1001)
-- **HEALTHCHECK**: `python manage.py check --deploy` every 30s
-- **Restart policy**: `unless-stopped` on both services
-- **Named volumes**: persistent media uploads and Redis data
-- **YAML anchors**: DRY configuration with `x-app-defaults`
-
 ---
 
 ## Production
@@ -397,14 +415,14 @@ docker compose ps
 ### Pre-deployment Checklist
 
 - [ ] Set `DEBUG=False` in `.env`
-- [ ] Generate a strong `SECRET_KEY` (`python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"`)
+- [ ] Generate a strong `SECRET_KEY`
 - [ ] Configure `ALLOWED_HOSTS` with your domain(s)
 - [ ] Set up PostgreSQL and update DB env vars
 - [ ] Configure Redis URL
 - [ ] Set `SENTRY_DSN` for error tracking
 - [ ] Set `CORS_ALLOWED_ORIGINS` with your frontend domain(s)
 - [ ] Configure email backend for password reset
-- [ ] Set up AWS S3 for media file storage (optional, see `.env.example`)
+- [ ] Set up AWS S3 for media file storage (optional)
 - [ ] Run `python manage.py check --deploy` and address any warnings
 
 ### Running in Production
@@ -434,7 +452,7 @@ Contributions are welcome!
 
 1. **Fork** the repository
 2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
-3. **Commit** your changes with descriptive messages
+3. **Commit** your changes with descriptive messages (`git commit -m 'feat: add amazing feature'`)
 4. **Run tests** to ensure nothing breaks: `python manage.py test`
 5. **Push** to your branch: `git push origin feature/amazing-feature`
 6. **Open** a Pull Request
@@ -449,5 +467,5 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <div align="center">
   <b>Built with Django</b><br/>
-  <sub>Star this repo if you find it useful!</sub>
+  <sub>Maintained by <a href="https://github.com/A0x0k">A0x0k</a> • Star this repo if you find it useful!</sub>
 </div>
