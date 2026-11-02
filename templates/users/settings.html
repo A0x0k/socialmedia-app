@@ -14,22 +14,19 @@
       </li>
     </ul>
 
-    <div class="tab-content">
+    <div class="tab-content pt-4">
       <div class="tab-pane fade {% if active_tab != 'email' and active_tab != 'delete' %}show active{% endif %}" id="password">
-        <div class="card">
-          <div class="card-body">
+        <div class="auth-card">
             <form method="post" action="{% url 'users:password_change' %}">
               {% csrf_token %}
               {{ password_form|crispy }}
               <button type="submit" class="btn btn-primary w-100 mt-3">{% translate "تغيير كلمة المرور" %}</button>
             </form>
-          </div>
         </div>
       </div>
 
       <div class="tab-pane fade {% if active_tab == 'email' %}show active{% endif %}" id="email">
-        <div class="card">
-          <div class="card-body">
+        <div class="auth-card">
             <form method="post" action="{% url 'users:change_email' %}">
               {% csrf_token %}
               <div class="mb-3">
@@ -46,17 +43,13 @@
               </div>
               <button type="submit" class="btn btn-primary w-100">{% translate "تحديث البريد الإلكتروني" %}</button>
             </form>
-          </div>
         </div>
       </div>
 
       <div class="tab-pane fade {% if active_tab == 'delete' %}show active{% endif %}" id="delete">
-        <div class="card border-danger">
-          <div class="card-header bg-danger text-white">
-            <h5 class="mb-0">{% translate "حذف الحساب" %}</h5>
-          </div>
-          <div class="card-body">
-            <div class="alert alert-danger">
+        <div class="auth-card border border-danger">
+          <h5 class="text-danger mb-3">{% translate "حذف الحساب" %}</h5>
+            <div class="alert alert-danger mb-4">
               <i class="fas fa-exclamation-triangle me-2"></i>
               {% translate "هذا الإجراء لا يمكن التراجع عنه. سيتم حذف جميع بياناتك نهائياً." %}
             </div>
@@ -72,7 +65,6 @@
               </div>
               <button type="submit" class="btn btn-danger w-100">{% translate "حذف الحساب نهائياً" %}</button>
             </form>
-          </div>
         </div>
       </div>
     </div>

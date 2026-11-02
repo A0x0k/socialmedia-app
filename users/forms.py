@@ -1,10 +1,12 @@
 from django import forms
-from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from django.utils.translation import gettext_lazy as _
-from .models import Profile
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
 from posts.utils import contains_profanity
+
+from .models import Profile
 
 
 class UserRegisterForm(UserCreationForm):
@@ -36,13 +38,13 @@ class UserRegisterForm(UserCreationForm):
             'class': 'form-control',
             'placeholder': _('تأكيد كلمة المرور')
         })
-    
+
     def clean_username(self):
         username = self.cleaned_data.get('username')
         if username and User.objects.filter(username=username).exists():
             raise ValidationError(_('A user with that username already exists.'))
         return username
-    
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email:
@@ -69,7 +71,7 @@ class UserUpdateForm(forms.ModelForm):
                 'maxlength': 254
             })
         }
-    
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email and self.instance and User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
@@ -113,7 +115,7 @@ class ProfileUpdateForm(forms.ModelForm):
                 'class': 'form-check-input'
             })
         }
-    
+
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image:
@@ -121,18 +123,18 @@ class ProfileUpdateForm(forms.ModelForm):
             max_size = 5 * 1024 * 1024
             if image.size > max_size:
                 raise ValidationError(_('Profile image too large. Size should not exceed 5MB.'))
-            
+
             # Check file type
             valid_extensions = ['.jpg', '.jpeg', '.png', '.gif']
             extension = '.' + image.name.split('.')[-1].lower()
             if extension not in valid_extensions:
                 raise ValidationError(_('Invalid file format. Valid formats are: .jpg, .jpeg, .png, .gif.'))
         return image
-    
+
     def clean_bio(self):
         bio = self.cleaned_data.get('bio')
         if bio and len(bio) > 500:
             raise ValidationError(_('Bio cannot exceed 500 characters.'))
         if bio and contains_profanity(bio):
             raise ValidationError(_('Bio contains inappropriate language.'))
-        return bio 
+        return bio

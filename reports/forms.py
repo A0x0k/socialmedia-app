@@ -1,6 +1,8 @@
 from django import forms
-from django.forms.models import construct_instance, InlineForeignKeyField
+from django.forms.models import InlineForeignKeyField, construct_instance
+
 from .models import Report
+
 
 class ReportForm(forms.ModelForm):
     class Meta:

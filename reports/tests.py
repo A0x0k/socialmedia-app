@@ -1,6 +1,8 @@
-from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.test import Client, TestCase
 from django.urls import reverse
+
 from .models import Report
 
 
@@ -47,7 +49,7 @@ class ReportModelTestCase(TestCase):
             reason=Report.OTHER,
             description='No target specified'
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             report.full_clean()
 
 

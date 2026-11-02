@@ -1,8 +1,9 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.test import Client, TestCase
 from django.urls import reverse
-from django.test import Client
-from .models import Profile, FollowRequest
+
+from .models import FollowRequest, Profile
+
 
 class ProfileTestCase(TestCase):
     def setUp(self):
@@ -28,7 +29,6 @@ class ProfileTestCase(TestCase):
     def test_block_unblock(self):
         user2 = User.objects.create_user(username='testuser2', password='testpass123')
         profile1 = self.user.profile
-        profile2 = user2.profile
         profile1.block(user2)
         self.assertTrue(profile1.is_blocked(user2))
         profile1.unblock(user2)
@@ -69,7 +69,7 @@ class ProfileViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_public_profile_view(self):
-        user2 = User.objects.create_user(username='testuser2', password='testpass123')
+        User.objects.create_user(username='testuser2', password='testpass123')
         response = self.client.get(reverse('users:profile', args=['testuser2']), secure=True)
         self.assertEqual(response.status_code, 200)
 

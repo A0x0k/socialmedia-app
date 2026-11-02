@@ -1,11 +1,14 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.utils import timezone
-from .models import Report
-from .forms import ReportForm
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
-from posts.models import Post, Comment
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from posts.models import Post
+
+from .forms import ReportForm
+from .models import Report
+
 
 @login_required
 def report_post(request, post_id):

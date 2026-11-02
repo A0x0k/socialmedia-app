@@ -1,7 +1,8 @@
-from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from django.test import Client, TestCase
 from django.urls import reverse
-from posts.models import Post, Hashtag
+
+from posts.models import Hashtag, Post
 
 
 class SearchViewTestCase(TestCase):

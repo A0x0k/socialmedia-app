@@ -10,11 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
-from pythonjsonlogger import jsonlogger
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,27 +48,27 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(','
  # Application definition
 
 INSTALLED_APPS = [
-     'django.contrib.admin',
-     'django.contrib.auth',
-     'django.contrib.contenttypes',
-     'django.contrib.sessions',
-     'django.contrib.messages',
-     'django.contrib.staticfiles',
-     'channels',
-     'users.apps.UsersConfig',
-     'posts.apps.PostsConfig',
-     'notifications.apps.NotificationsConfig',
-     'direct_messages.apps.DirectMessagesConfig',
-     'reports.apps.ReportsConfig',
-     'searchapp.apps.SearchappConfig',
-     'crispy_forms',
-     'crispy_bootstrap5',
-     'django_ratelimit',
-     'background_task',
-      'rest_framework',
-      'drf_spectacular',
-      'corsheaders',
- ]
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'channels',
+    'users.apps.UsersConfig',
+    'posts.apps.PostsConfig',
+    'notifications.apps.NotificationsConfig',
+    'direct_messages.apps.DirectMessagesConfig',
+    'reports.apps.ReportsConfig',
+    'searchapp.apps.SearchappConfig',
+    'crispy_forms',
+    'crispy_bootstrap5',
+    'django_ratelimit',
+    'background_task',
+    'rest_framework',
+    'drf_spectacular',
+    'corsheaders',
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -115,7 +115,6 @@ WSGI_APPLICATION = 'socialmediaproject.wsgi.application'
 ASGI_APPLICATION = 'socialmediaproject.asgi.application'
 
 
-# Database
 # Database
 # For production, it's highly recommended to use PostgreSQL.
 # Example PostgreSQL configuration:
@@ -270,7 +269,8 @@ if os.environ.get('REDIS_URL'):
         pass
 
 # Messages settings
-from django.contrib.messages import constants as messages
+from django.contrib.messages import constants as messages  # noqa: E402
+
 MESSAGE_TAGS = {
     messages.DEBUG: 'alert-secondary',
     messages.INFO: 'alert-info',

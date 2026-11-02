@@ -1,13 +1,14 @@
-from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.http import JsonResponse
-from django.db.models import Q
-from django_ratelimit.decorators import ratelimit
-from .models import Conversation, Message
-from .forms import MessageForm
 from django.contrib.auth.models import User
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django_ratelimit.decorators import ratelimit
+
 from notifications.utils import send_notification
+
+from .forms import MessageForm
+from .models import Conversation, Message
+
 
 @login_required
 def inbox(request):

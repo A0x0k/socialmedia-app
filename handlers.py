@@ -1,6 +1,4 @@
 from django.shortcuts import render
-from django.http import HttpResponseNotFound, HttpResponseServerError
-from django.template import RequestContext
 
 
 def handler404(request, exception):

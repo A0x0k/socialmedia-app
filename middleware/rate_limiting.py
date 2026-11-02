@@ -1,12 +1,11 @@
 """
 Rate limiting utilities with improved error handling
 """
-from django.http import JsonResponse
-from django_ratelimit.core import is_ratelimited
-from django_ratelimit.decorators import ratelimit
-from django.core.exceptions import PermissionDenied
-from django.shortcuts import render
 import logging
+
+from django.http import JsonResponse
+from django.shortcuts import render
+from django_ratelimit.core import is_ratelimited
 
 logger = logging.getLogger(__name__)
 
@@ -26,15 +25,15 @@ def custom_ratelimit(key=None, rate='5/m', method='POST', block=False):
                 method=method,
                 increment=True
             )
-            
+
             if was_limited:
                 if block:
                     # Return JSON response for API calls or regular response for web requests
                     ip = request.META.get('REMOTE_ADDR', 'unknown')
                     user = getattr(request, 'user', None)
                     identifier = str(user) if user and user.is_authenticated else ip
-                    if hasattr(request, 'META') and request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest' or \
-                       request.content_type == 'application/json' or \
+                    if request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest' or \
+                       getattr(request, 'content_type', '') == 'application/json' or \
                        'application/json' in request.META.get('HTTP_ACCEPT', ''):
                         logger.warning(f"Rate limit exceeded for {key}: {identifier}")
                         return JsonResponse({
@@ -53,10 +52,10 @@ def custom_ratelimit(key=None, rate='5/m', method='POST', block=False):
                     user = getattr(request, 'user', None)
                     identifier = str(user) if user and user.is_authenticated else ip
                     logger.info(f"Rate limit hit (not blocking) for {key}: {identifier}")
-            
+
             # Call the original view function
             return view_func(request, *args, **kwargs)
-        
+
         return wrapper
     return decorator
 

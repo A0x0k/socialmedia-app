@@ -1,6 +1,8 @@
-from django.test import TestCase, Client
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.test import Client, TestCase
 from django.urls import reverse
+
 from .models import Conversation, Message
 
 
@@ -70,7 +72,7 @@ class MessageModelTestCase(TestCase):
             sender=self.user1,
             content='   '
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             message.full_clean()
 
     def test_message_clean_too_long(self):
@@ -79,7 +81,7 @@ class MessageModelTestCase(TestCase):
             sender=self.user1,
             content='x' * 5001
         )
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             message.full_clean()
 
 

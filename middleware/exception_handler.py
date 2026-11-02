@@ -1,10 +1,9 @@
 import logging
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.core.exceptions import PermissionDenied
-from django.http import Http404
-from django.conf import settings
+
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, JsonResponse
+from django.shortcuts import render
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +11,16 @@ logger = logging.getLogger(__name__)
 def is_ajax_request(req):
     return req.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest' or \
            'application/json' in req.META.get('HTTP_ACCEPT', '') or \
-           req.content_type == 'application/json'
+           getattr(req, 'content_type', '') == 'application/json'
 
 
 class GlobalExceptionHandlerMiddleware:
     """
-    Global exception handling middleware that catches common errors and 
+    Global exception handling middleware that catches common errors and
     handles them gracefully, providing appropriate responses for both
     AJAX and regular requests.
     """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -44,7 +43,7 @@ class GlobalExceptionHandlerMiddleware:
             },
             exc_info=True
         )
-        
+
         # Handle different types of exceptions
         if isinstance(exception, Http404):
             if is_ajax_request(request):
@@ -54,7 +53,7 @@ class GlobalExceptionHandlerMiddleware:
                 }, status=404)
             else:
                 return render(request, 'errors/404.html', status=404)
-        
+
         elif isinstance(exception, PermissionDenied):
             if is_ajax_request(request):
                 return JsonResponse({
@@ -63,7 +62,7 @@ class GlobalExceptionHandlerMiddleware:
                 }, status=403)
             else:
                 return render(request, 'errors/403.html', status=403)
-        
+
         elif isinstance(exception, ValueError):
             if is_ajax_request(request):
                 return JsonResponse({
@@ -73,7 +72,7 @@ class GlobalExceptionHandlerMiddleware:
             else:
                 messages.error(request, 'Invalid value provided.')
                 return render(request, 'errors/400.html', status=400)
-        
+
         # Handle all other exceptions
         if is_ajax_request(request):
             return JsonResponse({
@@ -88,7 +87,7 @@ class ValidationMiddleware:
     """
     Middleware to add validation for common request aspects
     """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
         # Max upload size: 100MB for posts (to accommodate videos)
@@ -108,6 +107,6 @@ class ValidationMiddleware:
                     messages.error(request, f'Uploaded files exceed maximum size of {self.max_upload_size / (1024*1024)}MB.')
                     from django.http import HttpResponseBadRequest
                     return HttpResponseBadRequest("File too large")
-        
+
         response = self.get_response(request)
         return response

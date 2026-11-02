@@ -1,12 +1,9 @@
-from django.db import models
+
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from PIL import Image
-import os
-from background_task import background
-from django.core.validators import FileExtensionValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
+from django.db import models
+
 
 class Profile(models.Model):
     """
@@ -25,7 +22,7 @@ class Profile(models.Model):
     """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(
-        default='default.jpg', 
+        default='default.jpg',
         upload_to='profile_pics',
         validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])]
     )
@@ -38,7 +35,7 @@ class Profile(models.Model):
     email_verified = models.BooleanField(default=False, db_index=True)
     is_private = models.BooleanField(default=False, db_index=True, help_text='Private account requires approval for followers')
     blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by', blank=True)
-    
+
     def __str__(self):
         """String representation of the Profile model."""
         return f'{self.user.username} Profile'
@@ -52,10 +49,10 @@ class Profile(models.Model):
             from posts.utils import contains_profanity
             if contains_profanity(self.bio):
                 raise ValidationError("Bio contains inappropriate language.")
-        
+
         if self.location and len(self.location) > 100:
             raise ValidationError("Location cannot exceed 100 characters.")
-        
+
         if self.image and not self._state.adding:
             try:
                 if self.image.size > 5 * 1024 * 1024:

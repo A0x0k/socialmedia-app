@@ -1,9 +1,10 @@
-from django.db import models
+
 from django.contrib.auth.models import User
-from django.utils import timezone
-from django.core.validators import MinLengthValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
-import os
+from django.core.validators import FileExtensionValidator, MinLengthValidator
+from django.db import models
+from django.utils import timezone
+
 
 class Hashtag(models.Model):
     """
@@ -20,7 +21,7 @@ class Post(models.Model):
     """
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='posts', db_index=True)
     content = models.TextField(validators=[MinLengthValidator(1, message="Post content cannot be empty.")])
-    image = models.ImageField(upload_to='posts/', blank=True, null=True, 
+    image = models.ImageField(upload_to='posts/', blank=True, null=True,
                              validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])])
     video = models.FileField(upload_to='posts/', blank=True, null=True,
                             validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'avi', 'mkv', 'webm'])])
@@ -44,7 +45,7 @@ class Post(models.Model):
         # Validate that either content, image, or video is provided
         if not self.content and not self.image and not self.video:
             raise ValidationError('A post must have content, an image, or a video.')
-        
+
         # Validate content length
         if self.content and len(self.content.strip()) < 1:
             raise ValidationError('Post content cannot be empty.')
@@ -52,23 +53,23 @@ class Post(models.Model):
             from .utils import contains_profanity
             if contains_profanity(self.content):
                 raise ValidationError('Post content contains inappropriate language.')
-        
+
         # Validate that both image and video are not provided at the same time
         if self.image and self.video:
             raise ValidationError('A post cannot have both an image and a video.')
-        
+
         # Validate image size if provided
         if self.image:
             max_size = 10 * 1024 * 1024  # 10MB
             if self.image.size > max_size:
-                raise ValidationError(f'Image file too large. Size should not exceed 10MB.')
-        
+                raise ValidationError('Image file too large. Size should not exceed 10MB.')
+
         # Validate video size if provided
         if self.video:
             max_size = 100 * 1024 * 1024  # 100MB
             if self.video.size > max_size:
-                raise ValidationError(f'Video file too large. Size should not exceed 100MB.')
-    
+                raise ValidationError('Video file too large. Size should not exceed 100MB.')
+
     def save(self, *args, **kwargs):
         self.full_clean()  # This runs the clean method
         super().save(*args, **kwargs)
@@ -111,19 +112,19 @@ class Story(models.Model):
     """
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories', db_index=True)
     content = models.TextField(
-        blank=True, 
+        blank=True,
         max_length=2000,
         validators=[MinLengthValidator(1, message="Story content cannot be empty when provided.")]
     )
     image = models.ImageField(
-        upload_to='stories/', 
-        blank=True, 
+        upload_to='stories/',
+        blank=True,
         null=True,
         validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'gif'])]
     )
     video = models.FileField(
-        upload_to='stories/', 
-        blank=True, 
+        upload_to='stories/',
+        blank=True,
         null=True,
         validators=[FileExtensionValidator(allowed_extensions=['mp4', 'mov', 'avi', 'mkv'])]
     )
@@ -143,25 +144,25 @@ class Story(models.Model):
         # Validate that either content, image, or video is provided
         if not self.content.strip() and not self.image and not self.video:
             raise ValidationError('A story must have content, an image, or a video.')
-        
+
         # Validate content length
         if self.content and len(self.content.strip()) > 2000:
             raise ValidationError('Story content cannot exceed 2000 characters.')
-        
+
         # Validate that both image and video are not provided at the same time
         if self.image and self.video:
             raise ValidationError('A story cannot have both an image and a video.')
-        
+
         # Validate file sizes
         if self.image and self.image.size:
             max_size = 20 * 1024 * 1024  # 20MB
             if self.image.size > max_size:
-                raise ValidationError(f'Image file too large. Size should not exceed 20MB.')
-        
+                raise ValidationError('Image file too large. Size should not exceed 20MB.')
+
         if self.video and self.video.size:
             max_size = 100 * 1024 * 1024  # 100MB
             if self.video.size > max_size:
-                raise ValidationError(f'Video file too large. Size should not exceed 100MB.')
+                raise ValidationError('Video file too large. Size should not exceed 100MB.')
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -194,17 +195,17 @@ class Comment(models.Model):
         super().clean()
         if self.content and len(self.content.strip()) < 1:
             raise ValidationError("Comment content cannot be empty or just whitespace.")
-        
+
         if len(self.content) > 1000:
             raise ValidationError("Comment content cannot exceed 1000 characters.")
         from .utils import contains_profanity
         if self.content and contains_profanity(self.content):
             raise ValidationError("Comment content contains inappropriate language.")
-        
+
         # Validate that a comment cannot be its own parent
         if self.pk and self.parent and self.parent.pk == self.pk:
             raise ValidationError("A comment cannot be a reply to itself.")
-        
+
         # Validate that the parent comment belongs to the same post
         if self.parent and self.parent.post != self.post:
             raise ValidationError("Reply must belong to the same post as parent comment.")

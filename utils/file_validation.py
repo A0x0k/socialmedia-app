@@ -1,4 +1,5 @@
 import os
+
 from django.core.exceptions import ValidationError
 from PIL import Image
 
@@ -10,19 +11,19 @@ def validate_image_file(value):
     # Check file size (max 10MB for general images)
     max_size = 10 * 1024 * 1024
     if value.size > max_size:
-        raise ValidationError(f'الملف كبير جداً. الحد الأقصى للحجم هو 10 ميغابايت.')
+        raise ValidationError('الملف كبير جداً. الحد الأقصى للحجم هو 10 ميغابايت.')
 
     # Check file format
     valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in valid_extensions:
         raise ValidationError(f'نوع الملف غير مدعوم. أنواع الملفات المدعومة: {", ".join(valid_extensions)}')
-    
+
     # Verify it's actually an image
     try:
         Image.open(value).verify()
     except Exception:
-        raise ValidationError('الملف ليس صورة صالحة.')
+        raise ValidationError('الملف ليس صورة صالحة.') from None
 
 
 def validate_profile_image(value):
@@ -32,19 +33,19 @@ def validate_profile_image(value):
     # Check file size (max 5MB for profile images)
     max_size = 5 * 1024 * 1024
     if value.size > max_size:
-        raise ValidationError(f'صورة الملف الشخصي كبيرة جداً. الحد الأقصى للحجم هو 5 ميغابايت.')
+        raise ValidationError('صورة الملف الشخصي كبيرة جداً. الحد الأقصى للحجم هو 5 ميغابايت.')
 
     # Check file format
     valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in valid_extensions:
         raise ValidationError(f'نوع صورة الملف الشخصي غير مدعوم. أنواع الملفات المدعومة: {", ".join(valid_extensions)}')
-    
+
     # Verify it's actually an image
     try:
         Image.open(value).verify()
     except Exception:
-        raise ValidationError('ملف الصورة غير صالح.')
+        raise ValidationError('ملف الصورة غير صالح.') from None
 
 
 def validate_story_image(value):
@@ -54,19 +55,19 @@ def validate_story_image(value):
     # Check file size (max 20MB for story images)
     max_size = 20 * 1024 * 1024
     if value.size > max_size:
-        raise ValidationError(f'صورة القصة كبيرة جداً. الحد الأقصى للحجم هو 20 ميغابايت.')
+        raise ValidationError('صورة القصة كبيرة جداً. الحد الأقصى للحجم هو 20 ميغابايت.')
 
     # Check file format
     valid_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in valid_extensions:
         raise ValidationError(f'نوع صورة القصة غير مدعوم. أنواع الملفات المدعومة: {", ".join(valid_extensions)}')
-    
+
     # Verify it's actually an image
     try:
         Image.open(value).verify()
     except Exception:
-        raise ValidationError('ملف صورة القصة غير صالح.')
+        raise ValidationError('ملف صورة القصة غير صالح.') from None
 
 
 def validate_story_video(value):
@@ -76,7 +77,7 @@ def validate_story_video(value):
     # Check file size (max 100MB for story videos)
     max_size = 100 * 1024 * 1024
     if value.size > max_size:
-        raise ValidationError(f'فيديو القصة كبير جداً. الحد الأقصى للحجم هو 100 ميغابايت.')
+        raise ValidationError('فيديو القصة كبير جداً. الحد الأقصى للحجم هو 100 ميغابايت.')
 
     # Check file format
     valid_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm']

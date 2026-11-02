@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<style>
+  .landing-hero {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 4rem 1rem;
+  }
+  .landing-hero h1 {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  .landing-hero p {
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    opacity: 0.8;
+  }
+  .landing-hero .btn-lg {
+    padding: 0.75rem 2.5rem;
+    font-size: 1.1rem;
+    border-radius: 30px;
+  }
+  .features-section {
+    padding: 4rem 1rem;
+  }
+  .feature-card {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    border-radius: 16px;
+    background: var(--card-bg, #fff);
+    border: 1px solid rgba(0,0,0,0.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    height: 100%;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+  }
+  .feature-card .icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+  }
+  .feature-card h5 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .stats-section {
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+  .stat-item h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+  }
+  .cta-section {
+    padding: 4rem 1rem;
+    text-align: center;
+  }
+  .cta-section .btn-lg {
+    padding: 0.75rem 3rem;
+    font-size: 1.1rem;
+    border-radius: 30px;
+  }
+
+  [data-theme="dark"] .feature-card {
+    background: #2d2d2d;
+    border-color: #444;
+  }
+</style>
+
+<section class="landing-hero">
+  <div class="container">
+    <h1>{% translate "مرحباً بك في منصتي" %}</h1>
+    <p class="text-muted">
+      {% translate "منصة التواصل الاجتماعي التي تجمعك مع أصدقائك. شارك لحظاتك، تفاعل مع المنشورات، واكتشف ما يهمك." %}
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg">
+        <i class="fas fa-rocket me-2"></i>{% translate "ابدأ الآن" %}
+      </a>
+      <a href="{% url 'users:login' %}" class="btn btn-outline-secondary btn-lg">
+        <i class="fas fa-sign-in-alt me-2"></i>{% translate "تسجيل الدخول" %}
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="features-section">
+  <div class="container">
+    <h2 class="text-center mb-5 fw-bold">{% translate "لماذا منصتي؟" %}</h2>
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="icon"><i class="fas fa-share-alt"></i></div>
+          <h5>{% translate "شارك مع أصدقائك" %}</h5>
+          <p class="text-muted mb-0">{% translate "انشر صورك ومقاطع الفيديو و myśliك مع من تحب بسهولة وأمان." %}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="icon"><i class="fas fa-comments"></i></div>
+          <h5>{% translate "رسائل فورية" %}</h5>
+          <p class="text-muted mb-0">{% translate "تواصل مع أصدقائك عبررسائل مباشرة سريعة وآمنة." %}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="icon"><i class="fas fa-bell"></i></div>
+          <h5>{% translate "إشعارات لحظية" %}</h5>
+          <p class="text-muted mb-0">{% translate "احصل على إشعارات فورية عند تفاعل أصدقائك مع محتواك." %}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="icon"><i class="fas fa-hashtag"></i></div>
+          <h5>{% translate "اكتشف المحتوى الرائج" %}</h5>
+          <p class="text-muted mb-0">{% translate "تابع الهاشتاقات الرائجة واكتشف محتوى جديد ومشوق." %}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="icon"><i class="fas fa-bookmark"></i></div>
+          <h5>{% translate "احفظ ما تحبه" %}</h5>
+          <p class="text-muted mb-0">{% translate "احفظ المنشورات المفضلة لديك لتصفحها لاحقاً في أي وقت." %}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="icon"><i class="fas fa-shield-alt"></i></div>
+          <h5>{% translate "خصوصيتك أولاً" %}</h5>
+          <p class="text-muted mb-0">{% translate "تحكم كامل في خصوصية حسابك مع خيارات الحظر والتقييد." %}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <h2 class="fw-bold mb-3">{% translate "جاهز للانضمام؟" %}</h2>
+    <p class="text-muted mb-4">{% translate "انضم إلى مجتمعنا وابدأ في مشاركة لحظاتك اليوم." %}</p>
+    <a href="{% url 'users:register' %}" class="btn btn-primary btn-lg">
+      <i class="fas fa-user-plus me-2"></i>{% translate "إنشاء حساب مجاني" %}
+    </a>
+  </div>
+</section>
+{% endblock %}

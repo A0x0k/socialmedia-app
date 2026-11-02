@@ -1,7 +1,8 @@
-from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinLengthValidator
 from django.core.exceptions import ValidationError
+from django.core.validators import MinLengthValidator
+from django.db import models
+
 
 class Conversation(models.Model):
     participants = models.ManyToManyField(User, related_name='conversations')
@@ -39,7 +40,7 @@ class Message(models.Model):
         super().clean()
         if self.content and len(self.content.strip()) < 1:
             raise ValidationError("Message content cannot be empty or just whitespace.")
-        
+
         if len(self.content) > 5000:
             raise ValidationError("Message content cannot exceed 5000 characters.")
 

@@ -1,23 +1,22 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load i18n %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow">
-                <div class="card-body">
-                    <h2 class="card-title text-center mb-4">تسجيل الدخول</h2>
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">تسجيل الدخول</button>
-                        </div>
-                    </form>
-                    <div class="text-center mt-3">
-                        <p>ليس لديك حساب؟ <a href="{% url 'users:register' %}">سجل الآن</a></p>
+        <div class="col-md-5">
+            <div class="auth-card">
+                <h2 class="text-center">{% translate "تسجيل الدخول" %}</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary py-2">{% translate "تسجيل الدخول" %}</button>
                     </div>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-secondary">{% translate "ليس لديك حساب؟" %} <a href="{% url 'users:register' %}">{% translate "سجل الآن" %}</a></p>
                 </div>
             </div>
         </div>

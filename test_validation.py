@@ -2,8 +2,8 @@
 """Test script to validate the file validation functionality"""
 import os
 import sys
+
 import django
-from django.conf import settings
 
 # Add the project directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,12 +12,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'socialmediaproject.settings')
 django.setup()
 
-from django.core.files.uploadedfile import SimpleUploadedFile
-from posts.utils import validate_image_file, validate_video_file
+from django.core.files.uploadedfile import SimpleUploadedFile  # noqa: E402
+
+from posts.utils import validate_image_file, validate_video_file  # noqa: E402
+
 
 def test_validation():
     print("Testing file validation functions...")
-    
+
     # Test valid image file
     try:
         image = SimpleUploadedFile(
@@ -29,7 +31,7 @@ def test_validation():
         print("[OK] Valid image validation passed")
     except Exception as e:
         print(f"[ERROR] Valid image validation failed: {e}")
-    
+
     # Test invalid extension
     try:
         invalid_file = SimpleUploadedFile(
@@ -41,7 +43,7 @@ def test_validation():
         print("[ERROR] Invalid extension validation failed - should have raised error")
     except Exception as e:
         print(f"[OK] Invalid extension validation passed: {type(e).__name__}")
-    
+
     # Test valid video file
     try:
         video = SimpleUploadedFile(

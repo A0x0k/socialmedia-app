@@ -1,5 +1,8 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
-from .models import Post, Comment
+
+from .models import Comment, Post
+
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,5 +19,6 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ['id', 'content', 'image', 'created_at', 'author', 'comments', 'reactions_count']
 
+    @extend_schema_field(int)
     def get_reactions_count(self, obj):
         return obj.reactions.count()

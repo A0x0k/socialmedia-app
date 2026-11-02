@@ -1,23 +1,24 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.utils.translation import gettext_lazy as _
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.contrib.sites.shortcuts import get_current_site
-from django_ratelimit.decorators import ratelimit
-from middleware.rate_limiting import ip_ratelimit
-from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, LoginForm
-from django.contrib.auth.models import User
-from posts.models import Post
-from notifications.utils import send_notification
-from django.core.exceptions import ValidationError
-from .models import FollowRequest
 import logging
+
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.translation import gettext_lazy as _
+
+from middleware.rate_limiting import ip_ratelimit
+from notifications.utils import send_notification
+from posts.models import Post
+
+from .forms import LoginForm, ProfileUpdateForm, UserRegisterForm, UserUpdateForm
+from .models import FollowRequest
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +85,7 @@ def profile(request, username=None):
         if request.method == 'POST' and user == request.user:
             u_form = UserUpdateForm(request.POST, instance=request.user)
             p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
-            
+
             if u_form.is_valid() and p_form.is_valid():
                 try:
                     u_form.save()
@@ -153,15 +154,15 @@ def login_view(request):
 def follow_user(request, username):
     try:
         user_to_follow = get_object_or_404(User, username=username)
-        
+
         if request.user == user_to_follow:
             messages.warning(request, _('لا يمكنك متابعة نفسك'))
             return redirect('users:profile', username=username)
-        
+
         if request.user.profile.following.filter(pk=user_to_follow.pk).exists():
             messages.warning(request, _(f'أنت تتابع {username} بالفعل'))
             return redirect('users:profile', username=username)
-        
+
         # Check if the target account is private
         if user_to_follow.profile.is_private:
             FollowRequest.objects.get_or_create(
@@ -170,7 +171,7 @@ def follow_user(request, username):
             )
             messages.success(request, _(f'تم إرسال طلب متابعة إلى {username}'))
             return redirect('users:profile', username=username)
-        
+
         if request.user.profile.follow(user_to_follow):
             messages.success(request, _(f'أنت الآن تتابع {username}'))
             # Send notification
@@ -192,15 +193,15 @@ def follow_user(request, username):
 def unfollow_user(request, username):
     try:
         user_to_unfollow = get_object_or_404(User, username=username)
-        
+
         if request.user == user_to_unfollow:
             messages.warning(request, _('لا يمكنك إلغاء متابعة نفسك'))
             return redirect('users:profile', username=username)
-        
+
         if not request.user.profile.following.filter(pk=user_to_unfollow.pk).exists():
             messages.warning(request, _(f'أنت لا تتابع {username}'))
             return redirect('users:profile', username=username)
-        
+
         request.user.profile.unfollow(user_to_unfollow)
         messages.success(request, _(f'أنت لم تعد تتابع {username}'))
     except Exception as e:
@@ -261,14 +262,14 @@ def accept_follow_request(request, request_id):
     follow_req.from_user.following.add(request.user.profile)
     request.user.profile.followers.add(follow_req.from_user)
     follow_req.delete()
-    messages.success(request, _(f'تم قبول طلب المتابعة.'))
+    messages.success(request, _('تم قبول طلب المتابعة.'))
     return redirect('users:follow_requests')
 
 @login_required
 def reject_follow_request(request, request_id):
     follow_req = get_object_or_404(FollowRequest, id=request_id, to_user=request.user.profile)
     follow_req.delete()
-    messages.success(request, _(f'تم رفض طلب المتابعة.'))
+    messages.success(request, _('تم رفض طلب المتابعة.'))
     return redirect('users:follow_requests')
 
 @login_required

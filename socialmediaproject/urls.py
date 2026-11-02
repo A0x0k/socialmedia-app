@@ -14,15 +14,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.http import JsonResponse
-from django.db import connection
 from django.core.cache import cache
+from django.db import connection
+from django.http import JsonResponse
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+from posts.views import landing_page
+
 
 def health_check(request):
     """Health check endpoint for container orchestration."""
@@ -48,9 +51,11 @@ def health_check(request):
     return JsonResponse(health, status=status_code)
 
 urlpatterns = [
+     path('i18n/', include('django.conf.urls.i18n')),
      path('admin/', admin.site.urls),
-     path('', include('posts.urls')),
+     path('', landing_page, name='landing'),
      path('health/', health_check, name='health_check'),
+     path('feed/', include('posts.urls')),
      path('users/', include('users.urls')),
      path('notifications/', include('notifications.urls')),
      path('messages/', include('direct_messages.urls')),

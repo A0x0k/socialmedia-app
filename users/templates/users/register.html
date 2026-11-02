@@ -1,27 +1,22 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load i18n %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container py-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center">تسجيل حساب جديد</h2>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="d-grid gap-2">
-                            <button class="btn btn-primary" type="submit">تسجيل</button>
-                        </div>
-                    </form>
-                    <div class="border-top pt-3 text-center">
-                        <small class="text-muted">
-                            هل لديك حساب بالفعل؟ <a class="ms-2" href="{% url 'users:login' %}">تسجيل الدخول</a>
-                        </small>
+        <div class="col-md-5">
+            <div class="auth-card">
+                <h2 class="text-center">{% translate "تسجيل حساب جديد" %}</h2>
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-primary py-2" type="submit">{% translate "تسجيل" %}</button>
                     </div>
+                </form>
+                <div class="text-center mt-4">
+                    <p class="text-secondary">{% translate "هل لديك حساب بالفعل؟" %} <a href="{% url 'users:login' %}">{% translate "تسجيل الدخول" %}</a></p>
                 </div>
             </div>
         </div>

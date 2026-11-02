@@ -1,15 +1,16 @@
-from django.test import TestCase, Client
-from django.contrib.auth.models import User
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.urls import reverse
-from django.core.exceptions import ValidationError
-from .models import Post, Reaction, Hashtag, Story, Bookmark
-from .forms import PostForm, CommentForm
-from .utils import validate_image_file, validate_video_file, contains_profanity
-from django.core.files.base import ContentFile
-import tempfile
 from io import BytesIO
+
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import IntegrityError
+from django.test import Client, TestCase
+from django.urls import reverse
 from PIL import Image
+
+from .forms import CommentForm, PostForm
+from .models import Bookmark, Hashtag, Post, Reaction
+from .utils import contains_profanity, validate_image_file, validate_video_file
 
 
 def _valid_jpeg_bytes():
@@ -30,7 +31,7 @@ class PostTestCase(TestCase):
         self.assertEqual(self.post.total_reactions(), 0)
 
     def test_reaction(self):
-        reaction = Reaction.objects.create(post=self.post, user=self.user, reaction_type='like')
+        Reaction.objects.create(post=self.post, user=self.user, reaction_type='like')
         self.assertEqual(self.post.total_reactions(), 1)
         self.assertEqual(self.post.user_reaction(self.user), 'like')
 
@@ -43,7 +44,7 @@ class PostTestCase(TestCase):
 class PostFileValidationTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='testuser', password='testpass123')
-        
+
     def test_image_validation_success(self):
         """Test that valid image files pass validation"""
         image = SimpleUploadedFile(
@@ -77,7 +78,7 @@ class PostFileValidationTestCase(TestCase):
             content=b'invalid file',
             content_type='text/plain'
         )
-        
+
         with self.assertRaises(ValidationError):
             validate_image_file(invalid_image)
 
@@ -88,7 +89,7 @@ class PostFileValidationTestCase(TestCase):
             content=b'invalid file',
             content_type='text/plain'
         )
-        
+
         with self.assertRaises(ValidationError):
             validate_video_file(invalid_video)
 
@@ -105,7 +106,7 @@ class PostFileValidationTestCase(TestCase):
             content=buf.getvalue(),
             content_type='image/jpeg'
         )
-        
+
         with self.assertRaises(ValidationError):
             validate_image_file(large_image, max_size_mb=1)  # 1MB limit
 
@@ -116,7 +117,7 @@ class PostFileValidationTestCase(TestCase):
             content=b'x' * (102 * 1024 * 1024),  # 102MB file
             content_type='video/mp4'
         )
-        
+
         with self.assertRaises(ValidationError):
             validate_video_file(large_video, max_size_mb=100)  # 100MB limit
 
@@ -132,10 +133,10 @@ class PostFormValidationTestCase(TestCase):
             content=_valid_jpeg_bytes(),
             content_type='image/jpeg'
         )
-        
+
         form_data = {'content': 'Test content'}
         form_files = {'image': image}
-        
+
         form = PostForm(data=form_data, files=form_files)
         self.assertTrue(form.is_valid())
 
@@ -146,10 +147,10 @@ class PostFormValidationTestCase(TestCase):
             content=b'test video content',
             content_type='video/mp4'
         )
-        
+
         form_data = {'content': 'Test content'}
         form_files = {'video': video}
-        
+
         form = PostForm(data=form_data, files=form_files)
         self.assertTrue(form.is_valid())
 
@@ -165,10 +166,10 @@ class PostFormValidationTestCase(TestCase):
             content=b'test video content',
             content_type='video/mp4'
         )
-        
+
         form_data = {'content': 'Test content'}
         form_files = {'image': image, 'video': video}
-        
+
         form = PostForm(data=form_data, files=form_files)
         self.assertFalse(form.is_valid())
         self.assertIn('A post cannot have both an image and a video.', form.non_field_errors())
@@ -192,13 +193,13 @@ class PostModelValidationTestCase(TestCase):
             content=b'test video content',
             content_type='video/mp4'
         )
-        
+
         post = Post(
             author=self.user,
             content='Test content with video',
             video=video
         )
-        
+
         # This should not raise ValidationError
         try:
             post.full_clean()
@@ -218,14 +219,14 @@ class PostModelValidationTestCase(TestCase):
             content=b'test video content',
             content_type='video/mp4'
         )
-        
+
         post = Post(
             author=self.user,
             content='Test content',
             image=image,
             video=video
         )
-        
+
         with self.assertRaises(ValidationError):
             post.full_clean()
 
@@ -237,13 +238,13 @@ class PostModelValidationTestCase(TestCase):
             content=b'x' * (101 * 1024 * 1024),  # 101MB
             content_type='video/mp4'
         )
-        
+
         post = Post(
             author=self.user,
             content='Test content with large video',
             video=large_video
         )
-        
+
         with self.assertRaises(ValidationError):
             post.full_clean()
 
@@ -261,12 +262,12 @@ class PostViewTestCase(TestCase):
             content=_valid_jpeg_bytes(),
             content_type='image/jpeg'
         )
-        
+
         response = self.client.post(reverse('posts:post_create'), {
             'content': 'Test post with image',
             'image': image
         }, secure=True)
-        
+
         self.assertEqual(response.status_code, 302)  # Redirect after successful creation
         self.assertTrue(Post.objects.filter(content='Test post with image').exists())
 
@@ -277,12 +278,12 @@ class PostViewTestCase(TestCase):
             content=b'test video content',
             content_type='video/mp4'
         )
-        
+
         response = self.client.post(reverse('posts:post_create'), {
             'content': 'Test post with video',
             'video': video
         }, secure=True)
-        
+
         self.assertEqual(response.status_code, 302)  # Redirect after successful creation
         self.assertTrue(Post.objects.filter(content='Test post with video').exists())
 
@@ -298,13 +299,13 @@ class PostViewTestCase(TestCase):
             content=b'test video content',
             content_type='video/mp4'
         )
-        
+
         response = self.client.post(reverse('posts:post_create'), {
             'content': 'Test post with both',
             'image': image,
             'video': video
         }, secure=True)
-        
+
         self.assertEqual(response.status_code, 200)  # Should return to form with errors
         self.assertContains(response, 'A post cannot have both an image and a video.')
 
@@ -352,7 +353,7 @@ class BookmarkTestCase(TestCase):
 
     def test_bookmark_unique_together(self):
         Bookmark.objects.create(user=self.user, post=self.post)
-        with self.assertRaises(Exception):
+        with self.assertRaises(IntegrityError):
             Bookmark.objects.create(user=self.user, post=self.post)
 
     def test_bookmark_toggle_add(self):

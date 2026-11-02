@@ -5,9 +5,9 @@
   <img src="https://img.shields.io/badge/DRF-3.15-ff1709?style=for-the-badge&logo=django&logoColor=white" alt="DRF 3.15"/>
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready"/>
   <br/>
-  <img src="https://img.shields.io/github/actions/workflow/status/neoastra303/socialmedia-app/tests.yml?branch=main&style=flat-square&label=CI%2FCD" alt="CI/CD"/>
-  <img src="https://img.shields.io/github/last-commit/neoastra303/socialmedia-app?style=flat-square" alt="Last Commit"/>
-  <img src="https://img.shields.io/github/repo-size/neoastra303/socialmedia-app?style=flat-square" alt="Repo Size"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/A0x0k/socialmedia-app/tests.yml?branch=main&style=flat-square&label=CI%2FCD" alt="CI/CD"/>
+  <img src="https://img.shields.io/github/last-commit/A0x0k/socialmedia-app?style=flat-square" alt="Last Commit"/>
+  <img src="https://img.shields.io/github/repo-size/A0x0k/socialmedia-app?style=flat-square" alt="Repo Size"/>
   <img src="https://img.shields.io/badge/tests-74%20passing-brightgreen?style=flat-square" alt="Tests 74 Passing"/>
   <img src="https://img.shields.io/badge/code%20style-black-000000?style=flat-square" alt="Code Style Black"/>
   <img src="https://img.shields.io/badge/i18n-Arabic%20%7C%20English-blue?style=flat-square" alt="i18n"/>
@@ -207,7 +207,7 @@
 
 ```bash
 # Clone and run
-git clone https://github.com/neoastra303/socialmedia-app.git
+git clone https://github.com/A0x0k/socialmedia-app.git
 cd socialmedia-app
 
 # Copy environment file and edit with your values
@@ -224,7 +224,7 @@ Health check at `http://localhost:8000/health/`.
 ### Manual Setup
 
 ```bash
-git clone https://github.com/neoastra303/socialmedia-app.git
+git clone https://github.com/A0x0k/socialmedia-app.git
 cd socialmedia-app
 
 # Create virtual environment

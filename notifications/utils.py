@@ -1,7 +1,10 @@
 import logging
-from channels.layers import get_channel_layer
+
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 from .models import Notification
+
 
 def send_notification(user, message, notification_type='general', related_user=None, related_post=None):
     # Create notification in database

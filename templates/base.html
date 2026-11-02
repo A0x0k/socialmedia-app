@@ -1,6 +1,7 @@
 {% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 <!doctype html>
-<html lang="ar" dir="rtl" data-theme="light">
+<html lang="{{ LANGUAGE_CODE }}" dir="{% if LANGUAGE_CODE == 'ar' %}rtl{% else %}ltr{% endif %}" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -29,7 +30,7 @@
       rel="stylesheet"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
       rel="preload"
       as="style"
       onload="this.onload=null;this.rel='stylesheet'"
@@ -37,10 +38,11 @@
     <noscript
       ><link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
     /></noscript>
     {% load static %}
     <link href="{% static 'css/style.css' %}" rel="stylesheet" />
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet" />
   </head>
   <body>
     <nav class="navbar navbar-expand-lg sticky-top">
@@ -143,7 +145,7 @@
           <div class="d-flex search-container">
             <form
               class="d-flex search-form"
-              action="{% url 'posts:search' %}"
+              action="{% url 'searchapp:search' %}"
               method="get"
             >
               <div class="input-group">
@@ -219,6 +221,21 @@
               </a>
             </li>
             {% endif %}
+            <li class="nav-item">
+              <form action="{% url 'set_language' %}" method="post" class="d-inline">
+                {% csrf_token %}
+                <input name="next" type="hidden" value="{{ request.get_full_path }}">
+                <select name="language" onchange="this.form.submit()" class="form-select form-select-sm bg-transparent text-secondary border-0">
+                    {% get_current_language as LANGUAGE_CODE %}
+                    {% get_available_languages as LANGUAGES %}
+                    {% for lang, name in LANGUAGES %}
+                        <option value="{{ lang }}" {% if lang == LANGUAGE_CODE %}selected{% endif %}>
+                            {{ name }}
+                        </option>
+                    {% endfor %}
+                </select>
+              </form>
+            </li>
             <li class="nav-item">
               <button
                 id="theme-switcher"

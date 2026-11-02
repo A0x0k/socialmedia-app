@@ -1,39 +1,43 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.utils.translation import gettext_lazy as _
-from django.core.paginator import Paginator
-from django.db.models import Q
-from django_ratelimit.decorators import ratelimit
-from middleware.rate_limiting import post_creation_ratelimit, user_ratelimit
-from django.core.exceptions import ValidationError
-from .models import Post, Comment, Hashtag, Reaction, Story, Bookmark
-from notifications.utils import send_notification
-from .forms import PostForm, CommentForm
-from django.contrib.auth.models import User
-from django.views.decorators.http import require_POST
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .serializers import PostSerializer
-from django.utils import timezone
 import logging
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
+from rest_framework import generics
+
+from middleware.rate_limiting import post_creation_ratelimit
+from notifications.utils import send_notification
+
+from .forms import CommentForm, PostForm
+from .models import Bookmark, Hashtag, Post, Reaction, Story
+from .serializers import PostSerializer
+from .utils import visible_post_queryset
 
 logger = logging.getLogger(__name__)
 
+
+def landing_page(request):
+    if request.user.is_authenticated:
+        return redirect('posts:post_list')
+    return render(request, 'posts/landing.html')
+
 @login_required
 def post_list(request):
-    blocked = request.user.profile.blocked_users.values_list('user_id', flat=True)
-    blocked_by = request.user.profile.blocked_by.values_list('user_id', flat=True)
-    exclude_ids = set(blocked) | set(blocked_by)
-    posts = Post.objects.select_related('author').only(
-        'id', 'content', 'created_at', 'author__username', 'author__id'
-    ).exclude(author_id__in=exclude_ids).order_by('-created_at')
+    posts = visible_post_queryset(request.user).select_related(
+        'author', 'author__profile'
+    ).order_by('-created_at')
     paginator = Paginator(posts, 10)
-    
+
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'posts/post_list.html', {'page_obj': page_obj})
 
 @login_required
@@ -211,7 +215,9 @@ def react_to_post(request, post_id):
 def hashtag_posts(request, hashtag_name):
     """عرض المنشورات حسب الهاشتاج"""
     hashtag = get_object_or_404(Hashtag, name=hashtag_name)
-    posts = hashtag.posts.select_related('author').all().order_by('-created_at')
+    posts = visible_post_queryset(request.user).filter(
+        hashtags=hashtag
+    ).select_related('author').order_by('-created_at')
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -219,67 +225,13 @@ def hashtag_posts(request, hashtag_name):
 
 @login_required
 def trending_hashtags(request):
-    from django.db.models import Count
     from django.core.cache import cache
+    from django.db.models import Count
     hashtags = cache.get('trending_hashtags')
     if hashtags is None:
         hashtags = Hashtag.objects.annotate(post_count=Count('posts')).order_by('-post_count')[:10]
         cache.set('trending_hashtags', hashtags, 300)  # Cache for 5 minutes
     return render(request, 'posts/trending_hashtags.html', {'hashtags': hashtags})
-
-@ratelimit(key='user', rate='30/m', method='GET', block=True)
-@login_required
-def search(request):
-    """البحث المتقدم في المنشورات والمستخدمين"""
-    try:
-        query = request.GET.get('q', '')
-        filter_type = request.GET.get('type', 'all')  # all, posts, users
-
-        results = {
-            'posts': [],
-            'users': [],
-            'query': query,
-            'filter_type': filter_type
-        }
-
-        # Validate filter type
-        valid_filter_types = ['all', 'posts', 'users']
-        if filter_type not in valid_filter_types:
-            filter_type = 'all'
-
-        if query:
-            if filter_type in ['all', 'posts']:
-                blocked = request.user.profile.blocked_users.values_list('user_id', flat=True)
-                blocked_by = request.user.profile.blocked_by.values_list('user_id', flat=True)
-                posts = Post.objects.filter(
-                    Q(content__icontains=query) |
-                    Q(hashtags__name__icontains=query)
-                ).exclude(author_id__in=set(blocked) | set(blocked_by)
-                ).select_related('author').distinct().order_by('-created_at')
-                paginator = Paginator(posts, 10)
-                page_number = request.GET.get('page')
-                results['posts'] = paginator.get_page(page_number)
-
-            if filter_type in ['all', 'users']:
-                # Search in users
-                blocked = request.user.profile.blocked_users.values_list('user_id', flat=True)
-                blocked_by = request.user.profile.blocked_by.values_list('user_id', flat=True)
-                users = User.objects.filter(
-                    Q(username__icontains=query) |
-                    Q(profile__bio__icontains=query)
-                ).exclude(id__in=set(blocked) | set(blocked_by)).distinct()
-                results['users'] = users
-
-        return render(request, 'posts/search_results.html', results)
-    except Exception as e:
-        logger.error(f"Error in search: {str(e)}")
-        messages.error(request, _('حدث خطأ أثناء البحث.'))
-        return render(request, 'posts/search_results.html', {
-            'posts': [],
-            'users': [],
-            'query': '',
-            'filter_type': 'all'
-        })
 
 @login_required
 def stories_list(request):
@@ -295,12 +247,12 @@ def create_story(request):
         content = request.POST.get('content', '')
         image = request.FILES.get('image')
         video = request.FILES.get('video')
-        
+
         # Validate that only one of image or video is provided
         if image and video:
             messages.error(request, _('لا يمكن إنشاء قصة تحتوي على صورة وفيديو في نفس الوقت.'))
             return render(request, 'posts/create_story.html')
-        
+
         try:
             story = Story(
                 author=request.user,
@@ -322,7 +274,7 @@ def create_story(request):
         except Exception as e:
             logger.error(f"Error creating story: {str(e)}")
             messages.error(request, _('حدث خطأ أثناء إنشاء القصة.'))
-    
+
     return render(request, 'posts/create_story.html')
 
 @login_required
@@ -357,12 +309,9 @@ def saved_posts(request):
     posts = [b.post for b in bookmarks]
     return render(request, 'posts/saved_posts.html', {'posts': posts})
 
-@api_view(['GET'])
-def api_post_list(request):
-    from rest_framework.pagination import PageNumberPagination
-    paginator = PageNumberPagination()
-    paginator.page_size = 20
-    posts = Post.objects.select_related('author').all().order_by('-created_at')
-    result_page = paginator.paginate_queryset(posts, request)
-    serializer = PostSerializer(result_page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+
+class PostListAPIView(generics.ListAPIView):
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        return visible_post_queryset(self.request.user).select_related('author').order_by('-created_at')

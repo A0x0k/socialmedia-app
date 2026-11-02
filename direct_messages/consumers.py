@@ -1,10 +1,13 @@
 import json
-import time
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 from channels.db import database_sync_to_async
-from django.contrib.auth.models import User
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.core.cache import cache
+
+from posts.utils import contains_profanity
+
 from .models import Conversation, Message
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -13,13 +16,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        # WebSocket rate limiting per user
+        # WebSocket rate limiting per user (Atomic)
         rate_key = f'ws_chat_rate_{self.user.id}'
-        current = cache.get(rate_key, 0)
+        try:
+            current = cache.incr(rate_key)
+        except ValueError:
+            cache.set(rate_key, 1, 60)
+            current = 1
+
         if current > 10:
             await self.close()
             return
-        cache.set(rate_key, current + 1, 60)
 
         self.conversation_id = self.scope['url_route']['kwargs']['conversation_id']
         self.room_group_name = f'chat_{self.conversation_id}'
@@ -34,6 +41,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         message_content = data.get('message', '').strip()
         if not message_content:
+            return
+
+        if len(message_content) > 5000:
+            await self.send(text_data=json.dumps({'error': 'Message too long'}))
+            return
+
+        if contains_profanity(message_content):
+            await self.send(text_data=json.dumps({'error': 'Message contains inappropriate language'}))
+            return
+
+        # Per-message rate limiting per user (Atomic)
+        msg_rate_key = f'ws_chat_msg_rate_{self.user.id}'
+        try:
+            current = cache.incr(msg_rate_key)
+        except ValueError:
+            cache.set(msg_rate_key, 1, 60)
+            current = 1
+        if current > 30:
+            await self.send(text_data=json.dumps({'error': 'Message rate limit exceeded'}))
             return
 
         conversation = await database_sync_to_async(Conversation.objects.get)(id=self.conversation_id)
