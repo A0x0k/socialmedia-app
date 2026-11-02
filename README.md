@@ -190,6 +190,40 @@
                     └─────────────────────────┘
 ```
 
+### System Architecture Flowchart
+
+```mermaid
+graph TD
+    Client[Browser / Client (Bootstrap 5 RTL + WS)] -->|HTTP / REST API| Daphne[Daphne ASGI Server]
+    Client -->|WebSocket (WSS)| Daphne
+    Daphne --> Django[Django 5.2 Application Core]
+    subgraph Django Apps
+        Django --> Posts[Posts & Stories]
+        Django --> Users[Users & Social Graph]
+        Django --> Chat[Direct Messages]
+        Django --> Notif[Notifications]
+        Django --> Search[Search & Reports]
+    end
+    Django --> DB[(PostgreSQL / SQLite)]
+    Django --> Redis[(Redis 7 Cache & Channel Layer)]
+```
+
+### Real-Time WebSocket Messaging Sequence
+
+```mermaid
+sequenceDiagram
+    participant UserA as User A (Client)
+    participant WS as WebSocket Consumer
+    participant CL as Channel Layer (Redis)
+    participant UserB as User B (Client)
+
+    UserA->>WS: Send Message (WS /ws/chat/<id>/)
+    WS->>CL: Publish to room group
+    CL->>WS: Broadcast message event
+    WS->>UserB: Deliver real-time message
+    WS->>DB: Persist message in PostgreSQL
+```
+
 ---
 
 ## Project Structure
